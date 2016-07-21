@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "467946631589",
+    "project_id": "dotted-hook-103915"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:467946631589:android:1552bc7f677ec443",
+        "android_client_info": {
+          "package_name": "com.example.dreamfire.weather"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "467946631589-9tlt0nb6tgqo6oemji2ko5s3e0nvt5sh.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.dreamfire.weather",
+            "certificate_hash": "28703CEF17398E0EC5ED616DD48C536F15868707"
+          }
+        },
+        {
+          "client_id": "467946631589-uar64neoobhjk2nvqsopjiu1vb11dog4.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDH2jdd5XpapzuOGrMt8lBUeDVTtjjnaHE"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 1
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
