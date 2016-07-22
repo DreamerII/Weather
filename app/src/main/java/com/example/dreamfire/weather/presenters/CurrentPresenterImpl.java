@@ -87,6 +87,18 @@ public class CurrentPresenterImpl extends BasePresenter {
                 });
     }
 
+    public void loadCurrentCoord(double lat, double lon){
+        Subscription subscription = model.getCurrentCoord(lat, lon)
+                .subscribe(current -> {
+                    if(current != null){
+                        Log.d(TAG, "OK coord");
+                        mCurrent = current;
+                        mView.showCurrentWeather(mCurrent);
+                    }
+                },
+                        throwable -> {Log.d(TAG, "Error coord");});
+    }
+
     public void onCreateView(Bundle savedInstanceState) {
         if(savedInstanceState != null)
             mCurrent = (Current)savedInstanceState.getSerializable(BUNDLE_CURRENT_KEY);

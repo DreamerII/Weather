@@ -1,8 +1,13 @@
 package com.example.dreamfire.weather.view.activities;
 
 import android.Manifest;
+import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.location.Criteria;
 import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
+import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.NavigationView;
@@ -32,6 +37,7 @@ import com.example.dreamfire.weather.view.fragments.FifthFragment;
 import com.example.dreamfire.weather.view.fragments.SixteenFragment;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 
 import java.util.ArrayList;
@@ -41,8 +47,7 @@ import java.util.concurrent.locks.Lock;
 import io.realm.Realm;
 import io.realm.RealmConfiguration;
 
-public class MainActivity extends AppCompatActivity implements CurrentFragment.onSomeEventListener,
-        GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
+public class MainActivity extends AppCompatActivity implements CurrentFragment.onSomeEventListener, LocationListener {
     private static final String TAG = "MainActivity";
 
     private Toolbar mToolbar;
@@ -52,18 +57,21 @@ public class MainActivity extends AppCompatActivity implements CurrentFragment.o
     private NavigationView mNavigationView;
     private SearchView mSearchView;
     private Adapter adapter;
-    private GoogleApiClient mGoogleApiClient;
-    private Location mLocation;
+    private LocationManager mManager;
+    private String mProvider;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        mGoogleApiClient = new GoogleApiClient.Builder(this)
-                .addConnectionCallbacks(this)
-                .addOnConnectionFailedListener(this)
-                .addApi(LocationServices.API).build();
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                initLocation();
+            }
+        }).run();
+
 
         mNavigationView = (NavigationView) findViewById(R.id.nav_view);
         mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer);
@@ -101,7 +109,6 @@ public class MainActivity extends AppCompatActivity implements CurrentFragment.o
                 Log.d(TAG, "onQueryTextSubmit");
                 Bundle b = new Bundle();
                 b.putString("qwery", query);
-//                adapter.getItem(mViewPager.getCurrentItem()).onActivityCreated(b);
                 adapter.getItem(mViewPager.getCurrentItem()).onCreate(b);
                 return true;
             }
@@ -112,7 +119,35 @@ public class MainActivity extends AppCompatActivity implements CurrentFragment.o
                 return false;
             }
         });
+    }
 
+    private void initLocation() {
+        mManager = (LocationManager) getSystemService(LOCATION_SERVICE);
+        Criteria criteria = new Criteria();
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            return;
+        }
+        mProvider = mManager.getBestProvider(criteria, false);
+        Location location = mManager.getLastKnownLocation(mProvider);
+
+        if (location == null) {
+            Log.d(TAG, "Location = " + null);
+        } else {
+            Log.d(TAG, "Location = " + location.toString());
+        }
+        boolean enable = mManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
+
+        if (!enable) {
+            Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+            startActivity(intent);
+        }
     }
 
     @Override
@@ -131,8 +166,6 @@ public class MainActivity extends AppCompatActivity implements CurrentFragment.o
         adapter.addFragment(new FifthFragment(), "5 days");
         adapter.addFragment(new SixteenFragment(), "16 days");
 
-//        adapter.getItem(viewPager.getCurrentItem()
-
         viewPager.setAdapter(adapter);
     }
 
@@ -143,44 +176,33 @@ public class MainActivity extends AppCompatActivity implements CurrentFragment.o
     }
 
     @Override
-    public void onConnected(@Nullable Bundle bundle) {
-        Log.d(TAG, "onConnected");
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
-            Log.d(TAG, "onConnected permission deinded");
-            return;
-        } else {
-            Log.d(TAG, "onConnected permission good");
-            mLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
-            if(mLocation != null){
-                Log.d(TAG, "Location = " + mLocation.getLatitude()+"");
-            } else {
-                Log.d(TAG, "Location is null");
-            }
-        }
+    public void onLocationChanged(Location location) {
+        Log.d(TAG, "onLocationChanged " + location.getLatitude());
+        Bundle b = new Bundle();
+        b.putParcelable("location", location);
+        adapter.getItem(mViewPager.getCurrentItem()).onCreate(b);
     }
 
     @Override
-    public void onConnectionSuspended(int i) {
-        Log.d(TAG, "onConnectionSuspended");
+    public void onStatusChanged(String provider, int status, Bundle extras) {
+
     }
 
     @Override
-    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
-        Log.d(TAG, "onConnectionFailed");
+    public void onProviderEnabled(String provider) {
+
+    }
+
+    @Override
+    public void onProviderDisabled(String provider) {
+
     }
 
     static class Adapter extends FragmentPagerAdapter {
         private final List<Fragment> mFragmentList = new ArrayList<>();
         private final List<String> mFragmentTitleList = new ArrayList<>();
 
-        public Adapter(FragmentManager manager){
+        public Adapter(FragmentManager manager) {
             super(manager);
         }
 
@@ -194,7 +216,7 @@ public class MainActivity extends AppCompatActivity implements CurrentFragment.o
             return mFragmentList.size();
         }
 
-        public void addFragment(Fragment fragment, String title){
+        public void addFragment(Fragment fragment, String title) {
             mFragmentList.add(fragment);
             mFragmentTitleList.add(title);
         }
@@ -206,14 +228,34 @@ public class MainActivity extends AppCompatActivity implements CurrentFragment.o
     }
 
     @Override
-    protected void onStop() {
-        mGoogleApiClient.disconnect();
-        super.onStop();
+    protected void onResume() {
+        super.onResume();
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            return;
+        }
+        mManager.requestLocationUpdates(mProvider, 400, 1, this);
     }
 
     @Override
-    protected void onStart() {
-        mGoogleApiClient.connect();
-        super.onStart();
+    protected void onPause() {
+        super.onPause();
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            return;
+        }
+        mManager.removeUpdates(this);
     }
 }

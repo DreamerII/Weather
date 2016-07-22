@@ -18,6 +18,12 @@ public interface ApiWeather {
     Observable<Current> getCurrentWeather(@Query("q") String name,
                                           @Query("appid") String appid);
 
+    @GET("weather")
+    Observable<Current> getCurrentCoord(@Query("lat") double lat,
+                                        @Query("lon") double lon,
+                                        @Query("appid") String appid,
+                                        @Query("units") String units);
+
     @GET("forecast")
     Observable<Fifth> getFifthListWeather(@Query("q") String name,
                                           @Query("appid") String appid);

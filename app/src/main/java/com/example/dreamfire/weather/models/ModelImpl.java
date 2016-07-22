@@ -37,6 +37,13 @@ public class ModelImpl implements Model {
     }
 
     @Override
+    public Observable<Current> getCurrentCoord(double lat, double lon) {
+        return service.getCurrentCoord(lat, lon, ApiConstant.API_KEY, "metric")
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribeOn(Schedulers.io());
+    }
+
+    @Override
     public Observable<Fifth> getFifthListWeather(String location) {
         return service.getFifthListWeather(location, ApiConstant.API_KEY)
                 .observeOn(AndroidSchedulers.mainThread())

@@ -8,6 +8,7 @@ import rx.Observable;
 public interface Model {
     Observable<Current> getCurrentWeather(String location);
     Observable<Current> getCurrentDB(String location);
+    Observable<Current> getCurrentCoord(double lat, double lon);
     Observable<Fifth> getFifthListWeather(String location);
     Observable<Sixteen> getSixteenWather(String location);
 }
